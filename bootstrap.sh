@@ -1,1 +1,2 @@
-swift Sources/bootstrap/main.swift
+swift build
+.build/debug/bootstrap "$@"

@@ -11,7 +11,7 @@ func exists(url: URL) throws -> Bool {
     return ((response as? HTTPURLResponse)?.statusCode ?? -1) == 200
 }
 
-func shell(_ command: String) {
+func shell(_ command: String) -> Int32 {
     let task = Process()
     task.launchPath = "/bin/bash"
     task.arguments = ["-c", command]
@@ -26,12 +26,15 @@ func shell(_ command: String) {
         let outputString = String(data: output, encoding: String.Encoding.utf8) ?? ""
         if outputString != "" {
             print(outputString, terminator: "")
+        } else {
+            usleep(1000)
         }
         pipe.fileHandleForReading.waitForDataInBackgroundAndNotify()
     }
 
     task.launch()
     task.waitUntilExit()
+    return task.terminationStatus
 }
 
 enum ProjectType {
@@ -69,7 +72,7 @@ class Project {
     }
 
 
-    func clone() {
+    func clone() -> Int32 {
         shell("git clone --recursive https://github.com/\(root)/\(name).git \(targetRoot)")
     }
 
@@ -136,11 +139,25 @@ var projects: [Project] =
             Project(type: .small, name: "xkcd", root: "paulrehkugler", lang: .swift),
         ]
 print("Checking if all repos exist...")
+
+if CommandLine.argc > 1 {
+    let count: Int = Int(CommandLine.argc)
+    var selectedProjects: [Project] = []
+    for i in 1..<count {
+        let projectName = CommandLine.arguments[i]
+        let result = projects.filter { project in project.name == projectName }
+        selectedProjects += result
+    }
+    projects = selectedProjects
+}
+
 for project in projects {
     let check = try exists(url: project.github()!)
     if !check {
         print("Repository \(project.github()!) does not exist")
     }
-    project.clone()
-    project.setup()
+    let notSetBefore = project.clone()
+    if notSetBefore == 0 {
+        project.setup()
+    }
 }
