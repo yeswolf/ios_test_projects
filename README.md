@@ -1,3 +1,4 @@
 # iOS test projects for AppCode
 
-To get them run ```bootstrap.sh```
+Get all projects: run ```sh bootstrap.sh```
+Get a single project: run ```sh bootstrap.sh <project1> <project2> <projectN>```
