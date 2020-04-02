@@ -1,91 +1,85 @@
-#Hmmm...
-if [ ! -d "Hmm/OpenEmu" ]; then
-  git clone --recursive https://github.com/OpenEmu/OpenEmu.git Hmm/OpenEmu
-fi
+declare -A projects
+declare -a result
+declare -a all=(
+   "openemu"
+   "eidolon"
+   "wire-ios"
+   "wwdc"
+   "wordpress-ios"
+   "focus-ios"
+   "alamofire"
+   "onionbrowser"
+   "signal-ios"
+   "sequelpro"
+   "cocoaconferences-swiftui"
+   "xkcd"
+)
 
-#Large
-if [ ! -d "Large/eidolon" ]; then
-  git clone https://github.com/artsy/eidolon.git Large/eidolon
-  cd Large/eidolon
-  bundle install
-  bundle exec fastlane oss
-  cd ../../
-fi
+projects[openemu,root]=openemu
+projects[openemu,type]=hmm
+projects[openemu,commands]=""
 
-if [ ! -d "Large/WWDC" ]; then
-  git clone https://github.com/insidegui/WWDC Large/WWDC
-  cd Large/WWDC
-  ./boostrap.sh
-  cd ../../
-fi
+projects[eidolon,root]=artsy
+projects[eidolon,type]=large
+projects[eidolon,commands]='bundle install && bundle exec fastlane oss'
 
-if [ ! -d "Large/Wordpress" ]; then
-  git clone https://github.com/wordpress-mobile/WordPress-iOS.git Large/Wordpress
-  cd Large/WordPress
-  rake dependencies
-  cd ../../
-fi
-if [ ! -d "Large/focus-ios" ]; then
-  git clone https://github.com/mozilla-mobile/focus-ios.git Large/focus-ios
-  cd Large/focus-ios
-  ./checkout.sh
-  cd ../../
-fi
+projects[wire-ios,root]=wireapp
+projects[wire-ios,type]=large
+projects[wire-ios,commands]='sh setup.sh'
 
-if [ ! -d "Large/Telegram" ]; then
-  git clone --recursive https://github.com/peter-iakovlev/Telegram-iOS.git Large/Telegram
-fi
-#Middle
+projects[wwdc,root]=insidegui
+projects[wwdc,type]=large
+projects[wwdc,commands]='sh bootstrap.sh'
 
-if [ ! -d "Middle/Alamofire" ]; then
-  git clone https://github.com/Alamofire/Alamofire.git Middle/Alamofire
-fi
+projects[wordpress-ios,root]=wordpress-mobile
+projects[wordpress-ios,type]=large
+projects[wordpress-ios,commands]='rake dependencies'
 
-if [ ! -d "Middle/OnionBrowser" ]; then
-  git clone https://github.com/OnionBrowser/OnionBrowser Middle/OnionBrowser
-  cd Middle/OnionBrowser
-  rm -rf Carthage/
-  brew install automake libtool
-  git checkout 2.X
-  pod repo update
-  pod install
-  carthage update --platform iOS
-  cd ../../
-fi
+projects[focus-ios,root]=mozilla-mobile
+projects[focus-ios,type]=large
+projects[focus-ios,commands]='sh checkout.sh'
 
-if [ ! -d "Middle/Riot" ]; then
-  git clone https://github.com/vector-im/riot-ios.git Middle/Riot
-  cd Middle/Riot
-  bundle install
-  bundle exec pod install
-  cd ../../
-fi
+projects[alamofire,root]=alamofire
+projects[alamofire,type]=medium
+projects[alamofire,commands]='sh bootstrap.sh'
 
-if [ ! -d "Middle/Signal" ]; then
-  git clone --recursive https://github.com/signalapp/Signal-iOS.git Middle/Signal
-  cd Middle/Signal
-  gem install cocoapods-binary
-  cd ../../
-fi
+projects[onionbrowser,root]=onionbrowser
+projects[onionbrowser,type]=medium
+projects[onionbrowser,commands]='rm -rf Carthage/ && brew install automake libtool && git checkout 2.X && pod repo update && pod install && carthage update --platform iOS'
 
-if [ ! -d "Middle/wire" ]; then
-  git clone https://github.com/wireapp/wire-ios.git Middle/wire
-  cd Middle/wire
-  ./setup.sh
-  cd ../../
-fi
+projects[signal-ios,root]=signalapp
+projects[signal-ios,type]=medium
+projects[signal-ios,commands]='gem install cocoapods-binary'
 
-if [ ! -d "Middle/sequelpro" ]; then
-  git clone https://github.com/sequelpro/sequelpro.git Middle/sequelpro
-fi
+projects[sequelpro,root]=sequelpro
+projects[sequelpro,type]=medium
+projects[sequelpro,commands]=''
 
-#Small
-if [ ! -d "Small/CocoaConferences" ]; then
-  git clone https://github.com/yeswolf/cocoaconferences-swiftui Small/CocoaConferences
-  cd Small/CocoaConferences
-  pod install
-  cd ../../
+projects[cocoaconferences-swiftui,root]=yeswolf
+projects[cocoaconferences-swiftui,type]=small
+projects[cocoaconferences-swiftui,commands]='pod install'
+
+projects[xkcd,root]=paulrehkugler
+projects[xkcd,type]=small
+projects[xkcd,commands]=''
+
+if [ $# -ge 1 ]; then
+  result=("${@[@]}")
 fi
-if [ ! -d "Small/xkcd" ]; then
-  git clone https://github.com/paulrehkugler/xkcd.git Small/xkcd
+if [ $# -lt 1 ]; then
+  result=("${all[@]}")
 fi
+for project in $result; do
+  if [ ! -d ${projects[$project,type]}/$project ]; then
+    git clone --recursive https://github.com/${projects[${project},root]}/"$project".git ${projects[$project,type]}/"$project"
+    cd ${projects[$project,type]}/$project
+    if [ ! -z "${projects[$project,commands]}" ]; then
+      sh -c ${projects[$project,commands]}
+    fi
+    cd ../../
+  else
+    echo "Project ${projects[$project,name]} already exist"
+  fi
+done
+
+
