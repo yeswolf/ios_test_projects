@@ -1,85 +1,58 @@
-declare -A projects
 declare -a result
-declare -a all=(
-   "openemu"
-   "eidolon"
-   "wire-ios"
-   "wwdc"
-   "wordpress-ios"
-   "focus-ios"
-   "alamofire"
-   "onionbrowser"
-   "signal-ios"
-   "sequelpro"
-   "cocoaconferences-swiftui"
-   "xkcd"
+readonly NAME=0
+readonly ROOT=1
+readonly TYPE=2
+readonly COMMANDS=3
+
+projects=(
+  openemu openemu hmm ''
+  eidolon artsy large 'bundle install && bundle exec fastlane oss'
+  wire-ios wireapp large 'sh setup.sh'
+  wwdc insidegui large 'sh bootstrap.sh'
+  wordpress-ios wordpress-mobile large 'git checkout $(git describe --tags) && rake dependencies'
+  focus-ios mozilla-mobile large 'sh checkout.sh'
+  alamofire alamofire medium 'sh bootstrap.sh'
+  onionbrowser onionbrowser medium 'rm -rf Carthage/ && brew install automake libtool && git checkout 2.X && pod repo update && pod install && carthage update --platform iOS'
+  signal-ios signalapp medium 'gem install cocoapods-binary'
+  sequelpro sequelpro medium ''
+  cocoaconferences-swiftui yeswolf small 'pod install'
+  xkcd paulrehkugler small ''
 )
 
-projects[openemu,root]=openemu
-projects[openemu,type]=hmm
-projects[openemu,commands]=""
-
-projects[eidolon,root]=artsy
-projects[eidolon,type]=large
-projects[eidolon,commands]='bundle install && bundle exec fastlane oss'
-
-projects[wire-ios,root]=wireapp
-projects[wire-ios,type]=large
-projects[wire-ios,commands]='sh setup.sh'
-
-projects[wwdc,root]=insidegui
-projects[wwdc,type]=large
-projects[wwdc,commands]='sh bootstrap.sh'
-
-projects[wordpress-ios,root]=wordpress-mobile
-projects[wordpress-ios,type]=large
-projects[wordpress-ios,commands]='git checkout $(git describe --tags) && rake dependencies'
-
-projects[focus-ios,root]=mozilla-mobile
-projects[focus-ios,type]=large
-projects[focus-ios,commands]='sh checkout.sh'
-
-projects[alamofire,root]=alamofire
-projects[alamofire,type]=medium
-projects[alamofire,commands]='sh bootstrap.sh'
-
-projects[onionbrowser,root]=onionbrowser
-projects[onionbrowser,type]=medium
-projects[onionbrowser,commands]='rm -rf Carthage/ && brew install automake libtool && git checkout 2.X && pod repo update && pod install && carthage update --platform iOS'
-
-projects[signal-ios,root]=signalapp
-projects[signal-ios,type]=medium
-projects[signal-ios,commands]='gem install cocoapods-binary'
-
-projects[sequelpro,root]=sequelpro
-projects[sequelpro,type]=medium
-projects[sequelpro,commands]=''
-
-projects[cocoaconferences-swiftui,root]=yeswolf
-projects[cocoaconferences-swiftui,type]=small
-projects[cocoaconferences-swiftui,commands]='pod install'
-
-projects[xkcd,root]=paulrehkugler
-projects[xkcd,type]=small
-projects[xkcd,commands]=''
-
 if [ $# -ge 1 ]; then
-  result=("${@[@]}")
+  result=( "$@" )
 fi
+
 if [ $# -lt 1 ]; then
-  result=("${all[@]}")
+  count=${#projects[*]}
+  for (( i=0; i <= $count; i+=4 ))
+  do
+    result+=(${projects[$i]})
+  done
 fi
-for project in $result; do
-  if [ ! -d ${projects[$project,type]}/$project ]; then
-    git clone --recursive https://github.com/${projects[${project},root]}/"$project".git ${projects[$project,type]}/"$project"
-    cd ${projects[$project,type]}/$project
-    if [ ! -z "${projects[$project,commands]}" ]; then
-      sh -c ${projects[$project,commands]}
+for project in ${result[*]}
+do
+  project_start_idx=0
+  count=${#projects[*]}
+  for (( i=0; i < $count; i+=1 ))
+  do
+    if [ "${projects[$i]}" == "$project" ]; then
+      project_start_idx=$i
+      break
     fi
-    cd ../../
+  done
+  project_root=${projects[$project_start_idx+$ROOT]}
+  project_commands=${projects[$project_start_idx+$COMMANDS]}
+  project_type=${projects[$project_start_idx+$TYPE]}
+  subdir="$project_type/$project"
+  if [ ! -d $subdir ]; then
+      git clone --recursive "https://github.com/$project_root/$project".git $subdir
+      cd $subdir
+      if [ ! -z "$project_commands" ]; then
+        eval ${project_commands}
+      fi
+      cd ../../
   else
-    echo "Project $project already exist"
+   echo "Project $project already exist"
   fi
 done
-
-
