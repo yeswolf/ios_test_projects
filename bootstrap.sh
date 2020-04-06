@@ -33,7 +33,7 @@ projects[wwdc,commands]='sh bootstrap.sh'
 
 projects[wordpress-ios,root]=wordpress-mobile
 projects[wordpress-ios,type]=large
-projects[wordpress-ios,commands]='rake dependencies'
+projects[wordpress-ios,commands]='git checkout $(git describe --tags) && rake dependencies'
 
 projects[focus-ios,root]=mozilla-mobile
 projects[focus-ios,type]=large
@@ -78,7 +78,7 @@ for project in $result; do
     fi
     cd ../../
   else
-    echo "Project ${projects[$project,name]} already exist"
+    echo "Project $project already exist"
   fi
 done
 
